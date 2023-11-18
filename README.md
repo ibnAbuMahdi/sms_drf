@@ -1,3 +1,20 @@
+## sms
+A shop management system project built using Django framework. It is a practice project. 
+
+# class diagram 
+
+![sms class diagram](https://github.com/ibnAbuMahdi/sms/assets/94552925/09ab18f5-e22c-4abb-bddf-d6dc3bd20e6d)
+
+# User Stories
+
+- Shop manager can create shop item
+- Shop manager can update inventory
+- Shop manager can view inventory and sales records
+- Shop manager can view inventory and sales history
+- Shop manager can create/update item price
+- Shop assistant can create sales records
+
+
 # Django Rest Framework (DRF) Course
 Welcome to this full Django Rest Framework (DRF)course. 
 This course is perfect if you are looking to learn DRF and build your own API application.
