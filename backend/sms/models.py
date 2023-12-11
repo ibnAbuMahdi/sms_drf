@@ -5,17 +5,19 @@ from utils.model_abstracts import Model
 from django_extensions.db.models import (
     TimeStampedModel,
     ActivatorModel,
-    TitleSlugDescriptionModel
 )
+class Shop(models.Model):
+    shop_code = models.SlugField(primary_key=True, max_length=10)
+
 class User(models.Model):
     user = models.OneToOneField(Usr, on_delete=models.CASCADE)
-    type = models.CharField(max_length=2, choices=(('SM', 'Shop Manager'), ('SA', 'Shop Assistant')))
+    type = models.CharField(max_length=2, choices=(('M', 'Manager'), ('SM', 'Shop Manager'), ('SA', 'Shop Assistant')))
+    shop = models.ManyToManyField(Shop)
 
 
 class Item(
     TimeStampedModel,
     ActivatorModel ,
-    TitleSlugDescriptionModel,
     Model):
 
     """
@@ -29,9 +31,9 @@ class Item(
         ordering = ["id"]
 
     def __str__(self):
-        return self.title
-    
-    stock = models.IntegerField(default=1)
+        return self.name
+    name = models.CharField(default='test', max_length=255, unique=True)    
+    stock = models.IntegerField(default=0)
     unit = models.CharField(max_length=20)
 
 
@@ -47,13 +49,14 @@ class Item(
             return False
         return True
 
-    def place_order(self, user, qty):
+    def place_order(self, user, qty, shop):
         #used to place an order
         if self.check_stock(qty):
             record = SalesRecord.objects.create(
                 item = self, 
                 quantity = qty, 
                 user = user,
+                shop = shop,
                 itemprice = self.get_price('s'))
             self.manage_stock(qty)
             return record
@@ -64,11 +67,12 @@ class Item(
         price = ItemPrice.objects.filter(item=self, type=typ).order_by('created').first()
         return price
 
-    def manage_inventory(self, user, qty):
+    def manage_inventory(self, user, qty, shop):
         if int(qty) + self.stock >= 0:
             record = InventoryRecord.objects.create(
                 user=user,
                 item=self,
+                shop=shop,
                 itemprice=self.get_price('c'),
                 quantity=qty)
             self.manage_stock(-1*qty)
@@ -109,10 +113,10 @@ class SalesRecord(
     item = models.ForeignKey(Item, null=True, blank=True, on_delete=models.CASCADE)
     quantity = models.IntegerField(default=0)
     itemprice = models.ForeignKey(ItemPrice, null=True, blank=True, on_delete=models.CASCADE)
-
+    shop = models.ForeignKey(Shop, default='admin', on_delete=models.CASCADE)
 
     def __str__(self):
-        return f'{self.user.username} - {self.item.title}'
+        return f'{self.user.user.username} - {self.item.name}'
 
 
 class InventoryRecord(
@@ -129,10 +133,11 @@ class InventoryRecord(
         verbose_name_plural = 'InventoryRecords'
         ordering = ["id"]
     
-    user = models.ForeignKey(User, on_delete=models.CASCADE, blank=True)
+    user = models.ForeignKey(User, blank=True, on_delete=models.DO_NOTHING)
     item = models.ForeignKey(Item, null=True, blank=True, on_delete=models.CASCADE)
-    itemprice = models.ForeignKey(ItemPrice, null=True, blank=True, on_delete=models.CASCADE)
+    itemprice = models.ForeignKey(ItemPrice, null=True, blank=True, on_delete=models.DO_NOTHING)
     quantity = models.IntegerField(default=0)
-
+    shop = models.ForeignKey(Shop, default='admin', on_delete=models.CASCADE)
+    
     def __str__(self):
-        return f'{self.user.username} - {self.item.title}'
+        return f'{self.user.user.username} - {self.item.name}'
